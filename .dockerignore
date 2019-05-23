@@ -1,0 +1,29 @@
+# Packages
+node_modules/
+
+# Log files
+logs/
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Docker (experimental)
+Dockerfile
+.dockerignore
+
+# Command files (unfinished)
+*.bak
+
+# Miscellaneous
+.tmp/
+LICENSE
+
+# Git
+.github
+.git
+.gitattributes
+.gitignore
