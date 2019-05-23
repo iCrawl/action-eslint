@@ -1,9 +1,9 @@
 const request = require('./request');
-const { GITHUB_SHA, GITHUB_EVENT_PATH, GITHUB_TOKEN, GITHUB_WORKSPACE } = process.env;
+const { GITHUB_SHA, GITHUB_EVENT_PATH, GITHUB_TOKEN, GITHUB_WORKSPACE, FOLDERS } = process.env;
 const event = require(GITHUB_EVENT_PATH);
 const { repository: { owner: { login: owner }, name: repo } } = event;
 
-const name = 'ESLint Action Marine';
+const name = 'ESLint';
 const headers = {
 	'Content-Type': 'application/json',
 	Accept: 'application/vnd.github.antiope-preview+json',
@@ -28,13 +28,14 @@ async function check() {
 
 function lint() {
 	const eslint = require('eslint');
-	const marine_node = require('eslint-config-marine/node');
+	const pkg = require(`${GITHUB_WORKSPACE}/package.json`)
+	const marine_node = require(`eslint-config-${pkg.eslintConfig.extends}`);
 	const cli = new eslint.CLIEngine({
 		extensions: ['.ts', '.tsx', '.js', '.jsx'],
 		ignorePath: '.gitignore',
 		baseConfig: marine_node,
 	});
-	const report = cli.executeOnFiles(['.']);
+	const report = cli.executeOnFiles(FOLDERS ? FOLDERS.split(',') : ['src']);
 	const { results, errorCount, warningCount } = report;
 	const levels = ['', 'warning', 'failure'];
 	const annotations = [];
