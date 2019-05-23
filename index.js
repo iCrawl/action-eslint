@@ -28,7 +28,7 @@ async function check() {
 
 function lint() {
 	const eslint = require('eslint');
-	const pkg = require(`${GITHUB_WORKSPACE}/package.json`)
+	const pkg = require(`${GITHUB_WORKSPACE}/package.json`);
 	const marine_node = require(`eslint-config-${pkg.eslintConfig.extends}`);
 	const cli = new eslint.CLIEngine({
 		extensions: ['.ts', '.tsx', '.js', '.jsx'],
