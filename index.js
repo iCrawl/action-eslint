@@ -1,9 +1,8 @@
 const request = require('./request');
-const { GITHUB_SHA, GITHUB_EVENT_PATH, GITHUB_TOKEN, GITHUB_WORKSPACE, FOLDERS } = process.env;
+const { GITHUB_SHA, GITHUB_EVENT_PATH, GITHUB_TOKEN, GITHUB_WORKSPACE, GITHUB_ACTION, FOLDERS } = process.env;
 const event = require(GITHUB_EVENT_PATH);
 const { repository: { owner: { login: owner }, name: repo } } = event;
 
-const name = 'ESLint';
 const headers = {
 	'Content-Type': 'application/json',
 	Accept: 'application/vnd.github.antiope-preview+json',
@@ -16,7 +15,7 @@ async function check() {
 		method: 'POST',
 		headers,
 		body: {
-			name,
+			name: GITHUB_ACTION,
 			head_sha: GITHUB_SHA,
 			status: 'in_progress',
 			started_at: new Date()
@@ -58,7 +57,7 @@ function lint() {
 	return {
 		conclusion: errorCount > 0 ? 'failure' : 'success',
 		output: {
-			title: name,
+			title: GITHUB_ACTION,
 			summary: `${errorCount} error(s), ${warningCount} warning(s) found`,
 			annotations
 		}
@@ -70,7 +69,7 @@ async function update(id, conclusion, output) {
 		method: 'PATCH',
 		headers,
 		body: {
-			name,
+			name: GITHUB_ACTION,
 			head_sha: GITHUB_SHA,
 			status: 'completed',
 			completed_at: new Date(),
