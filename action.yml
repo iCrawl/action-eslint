@@ -1,0 +1,8 @@
+name: 'ESlint'
+description: 'Lints JavaScript/TypeScript code.'
+inputs:
+  job-name:
+    description: 'Optional name of the annotation author.'
+runs:
+  using: 'node12'
+  main: 'dist/main.js'
