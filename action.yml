@@ -3,6 +3,8 @@ description: 'Lints JavaScript/TypeScript code.'
 inputs:
   job-name:
     description: 'Optional name of the annotation author.'
+  lint-all:
+    description: 'Lint all files.'
 runs:
   using: 'node12'
   main: 'dist/main.js'
