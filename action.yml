@@ -1,4 +1,4 @@
-name: 'ESlint'
+name: 'ESLint'
 description: 'Lints JavaScript/TypeScript code.'
 inputs:
   job-name:
