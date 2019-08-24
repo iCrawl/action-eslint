@@ -56,7 +56,7 @@ async function run() {
 			status: 'in_progress',
 			ref: GITHUB_SHA!
 		});
-		const check = checks.data.check_runs.find(({ name }) => name === jobName);
+		const check = checks.data.check_runs.find(({ name }) => name.toLowerCase() === jobName.toLowerCase());
 		if (check) id = check.id;
 	}
 	if (!id) {
