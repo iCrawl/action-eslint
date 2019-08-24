@@ -8,13 +8,13 @@ const { GITHUB_TOKEN, GITHUB_SHA, GITHUB_WORKSPACE } = process.env;
 const ACTION_NAME = 'ESLint';
 const EXTENSIONS = new Set(['.ts', '.js']);
 
-async function lint(files: string[]) {
+async function lint(files: string[] | null) {
 	const { CLIEngine } = await import(join(process.cwd(), 'node_modules/eslint')) as typeof import('eslint');
 	const cli = new CLIEngine({
 		extensions: [...EXTENSIONS],
 		ignorePath: '.gitignore'
 	});
-	const report = cli.executeOnFiles(files);
+	const report = cli.executeOnFiles(files || ['src']);
 	const { results, errorCount, warningCount } = report;
 	const levels: ChecksUpdateParamsOutputAnnotations['annotation_level'][] = ['notice', 'warning', 'failure'];
 	const annotations: ChecksUpdateParamsOutputAnnotations[] = [];
@@ -110,7 +110,8 @@ async function run() {
 	}
 
 	try {
-		const { conclusion, output } = await lint(lintFiles);
+		const lintAll = getInput('lint-all');
+		const { conclusion, output } = await lint(lintAll ? null : lintFiles);
 		await octokit.checks.update({
 			...context.repo,
 			check_run_id: id,
