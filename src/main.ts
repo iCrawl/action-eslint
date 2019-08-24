@@ -3,7 +3,9 @@ import { ChecksUpdateParamsOutputAnnotations, ChecksCreateParams } from '@octoki
 import { GitHub, context } from '@actions/github';
 import { getInput, setFailed, debug } from '@actions/core';
 
-const { GITHUB_TOKEN, GITHUB_SHA, GITHUB_WORKSPACE, GITHUB_ACTION } = process.env;
+const { GITHUB_TOKEN, GITHUB_SHA, GITHUB_WORKSPACE } = process.env;
+
+const ACTION_NAME = 'ESLint';
 
 async function lint() {
 	const { CLIEngine } = await import(join(process.cwd(), 'node_modules/eslint')) as typeof import('eslint');
@@ -28,7 +30,7 @@ async function lint() {
 				start_column: column,
 				end_column: endColumn || column,
 				annotation_level: annotationLevel,
-				title: ruleId || 'ESLint',
+				title: ruleId || ACTION_NAME,
 				message
 			});
 		}
@@ -37,7 +39,7 @@ async function lint() {
 	return {
 		conclusion: errorCount > 0 ? 'failure' : 'success' as ChecksCreateParams['conclusion'],
 		output: {
-			title: GITHUB_ACTION,
+			title: ACTION_NAME,
 			summary: `${errorCount} error(s), ${warningCount} warning(s) found`,
 			annotations
 		}
@@ -55,13 +57,12 @@ async function run() {
 			ref: GITHUB_SHA!
 		});
 		const check = checks.data.check_runs.find(({ name }) => name === jobName);
-		console.log(checks.data.check_runs);
 		if (check) id = check.id;
 	}
 	if (!id) {
 		id = (await octokit.checks.create({
 			...context.repo,
-			name: GITHUB_ACTION!,
+			name: ACTION_NAME,
 			head_sha: GITHUB_SHA!,
 			status: 'in_progress',
 			started_at: new Date().toISOString()
