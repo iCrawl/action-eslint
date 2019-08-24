@@ -1,9 +1,7 @@
-# eslint-action-marine
-> Typescript ESLint [action](https://github.com/features/actions)
+# eslint-action
+> TypeScript/JavaScript ESLint [action](https://github.com/features/actions)
 
 ## Usage
-
-Make sure you have [eslint-config-marine](https://github.com/iCrawl/eslint-config-marine) installed in the project you are trying to add this action to.
 
 ## Contributing
 
@@ -15,7 +13,7 @@ Make sure you have [eslint-config-marine](https://github.com/iCrawl/eslint-confi
 
 ## Author
 
-**eslint-action-marine** © [iCrawl](https://github.com/iCrawl)  
+**eslint-action** © [iCrawl](https://github.com/iCrawl)  
 Authored and maintained by iCrawl.
 
 > GitHub [@iCrawl](https://github.com/iCrawl) · Twitter [@iCrawlToGo](https://twitter.com/iCrawlToGo)
