@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join, extname } from 'path';
 import { ChecksUpdateParamsOutputAnnotations, ChecksCreateParams } from '@octokit/rest';
 import { GitHub, context } from '@actions/github';
 import { getInput, setFailed, debug } from '@actions/core';
@@ -6,14 +6,15 @@ import { getInput, setFailed, debug } from '@actions/core';
 const { GITHUB_TOKEN, GITHUB_SHA, GITHUB_WORKSPACE } = process.env;
 
 const ACTION_NAME = 'ESLint';
+const EXTENSIONS = new Set(['.ts', '.js']);
 
-async function lint() {
+async function lint(files: string[]) {
 	const { CLIEngine } = await import(join(process.cwd(), 'node_modules/eslint')) as typeof import('eslint');
 	const cli = new CLIEngine({
-		extensions: ['.ts', '.js'],
+		extensions: [...EXTENSIONS],
 		ignorePath: '.gitignore'
 	});
-	const report = cli.executeOnFiles(['src']);
+	const report = cli.executeOnFiles(files);
 	const { results, errorCount, warningCount } = report;
 	const levels: ChecksUpdateParamsOutputAnnotations['annotation_level'][] = ['notice', 'warning', 'failure'];
 	const annotations: ChecksUpdateParamsOutputAnnotations[] = [];
@@ -48,13 +49,52 @@ async function lint() {
 
 async function run() {
 	const octokit = new GitHub(GITHUB_TOKEN!);
+
+	let currentSha: string;
+	let info;
+	let lintFiles;
+	if (context.issue && context.issue.number) {
+		info = await octokit.graphql(`query($owner: String!, $name: String!, $prNumber: Int!) {
+			repository(owner: $owner, name: $name) {
+				pullRequest(number: $prNumber) {
+					files(first: 100) {
+						nodes {
+							path
+						}
+					}
+					commits(last: 1) {
+						nodes {
+							commit {
+								oid
+							}
+						}
+					}
+				}
+			}
+		}`,
+		{
+			owner: context.repo.owner,
+			name: context.repo.repo,
+			prNumber: context.issue.number
+		});
+		currentSha = info.repository.pullRequest.commits.nodes[0].commit.oid;
+		const files = info.repository.pullRequest.files.nodes;
+		lintFiles = files.filter((file: { path: string }) => EXTENSIONS.has(extname(file.path))).map((f: { path: string }) => f.path);
+	} else {
+		info = await octokit.repos.getCommit({ owner: context.repo.owner, repo: context.repo.repo, ref: GITHUB_SHA! });
+		currentSha = GITHUB_SHA!;
+		const files = info.data.files;
+		lintFiles = files.filter(file => EXTENSIONS.has(extname(file.filename))).map(f => f.filename);
+	}
+	debug(`Commit: ${currentSha}`);
+
 	let id: number | undefined;
 	const jobName = getInput('job-name');
 	if (jobName) {
 		const checks = await octokit.checks.listForRef({
 			...context.repo,
 			status: 'in_progress',
-			ref: GITHUB_SHA!
+			ref: currentSha
 		});
 		const check = checks.data.check_runs.find(({ name }) => name.toLowerCase() === jobName.toLowerCase());
 		if (check) id = check.id;
@@ -63,14 +103,14 @@ async function run() {
 		id = (await octokit.checks.create({
 			...context.repo,
 			name: ACTION_NAME,
-			head_sha: GITHUB_SHA!,
+			head_sha: currentSha,
 			status: 'in_progress',
 			started_at: new Date().toISOString()
 		})).data.id;
 	}
 
 	try {
-		const { conclusion, output } = await lint();
+		const { conclusion, output } = await lint(lintFiles);
 		await octokit.checks.update({
 			...context.repo,
 			check_run_id: id,
