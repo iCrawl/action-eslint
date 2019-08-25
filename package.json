@@ -1,6 +1,6 @@
 {
-	"name": "eslint-action",
-	"version": "0.1.0",
+	"name": "action-eslint",
+	"version": "1.0.0",
 	"description": "TypeScript/JavaScript ESLint action",
 	"main": "dist/main.js",
 	"author": "iCrawl <icrawltogo@gmail.com>",

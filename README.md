@@ -1,7 +1,33 @@
-# eslint-action
+# action-eslint
 > TypeScript/JavaScript ESLint [action](https://github.com/features/actions)
 
 ## Usage
+
+`.github/workflows/lint.yml`
+```yml
+on:
+  push:
+  pull_request:
+
+jobs:
+  eslint:
+    name: eslint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: install node v12
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12
+    - name: yarn install
+      run: yarn install
+    - name: eslint
+      uses: icrawl/action-eslint@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        job-name: eslint
+```
 
 ## Contributing
 
@@ -13,7 +39,7 @@
 
 ## Author
 
-**eslint-action** © [iCrawl](https://github.com/iCrawl)  
+**action-eslint** © [iCrawl](https://github.com/iCrawl)  
 Authored and maintained by iCrawl.
 
 > GitHub [@iCrawl](https://github.com/iCrawl) · Twitter [@iCrawlToGo](https://twitter.com/iCrawlToGo)
