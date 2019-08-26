@@ -6,7 +6,7 @@ import { getInput, setFailed, debug } from '@actions/core';
 const { GITHUB_TOKEN, GITHUB_SHA, GITHUB_WORKSPACE } = process.env;
 
 const ACTION_NAME = 'ESLint';
-const EXTENSIONS = new Set(['.ts', '.js']);
+const EXTENSIONS = new Set(['.ts', '.js', '.tsx']);
 
 async function lint(files: string[] | null) {
 	const { CLIEngine } = await import(join(process.cwd(), 'node_modules/eslint')) as typeof import('eslint');
