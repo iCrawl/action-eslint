@@ -84,7 +84,7 @@ async function run() {
 		info = await octokit.repos.getCommit({ owner: context.repo.owner, repo: context.repo.repo, ref: GITHUB_SHA! });
 		currentSha = GITHUB_SHA!;
 		const files = info.data.files;
-		lintFiles = files.filter(file => EXTENSIONS.has(extname(file.filename))).map(f => f.filename);
+		lintFiles = files.filter(file => EXTENSIONS.has(extname(file.filename)) && !file.filename.includes('.d.ts') && file.status !== 'removed' && file.status !== 'changed').map(f => f.filename);
 	}
 	debug(`Commit: ${currentSha}`);
 
