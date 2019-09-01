@@ -6,7 +6,7 @@ import { getInput, setFailed, debug } from '@actions/core';
 const { GITHUB_TOKEN, GITHUB_SHA, GITHUB_WORKSPACE } = process.env;
 
 const ACTION_NAME = 'ESLint';
-const EXTENSIONS = new Set(['.ts', '.js', '.tsx', '.jsx']);
+const EXTENSIONS = new Set(['.ts', '.js']);
 
 async function lint(files: string[] | null) {
 	const { CLIEngine } = await import(join(process.cwd(), 'node_modules/eslint')) as typeof import('eslint');
@@ -18,12 +18,15 @@ async function lint(files: string[] | null) {
 	const { results, errorCount, warningCount } = report;
 	const levels: ChecksUpdateParamsOutputAnnotations['annotation_level'][] = ['notice', 'warning', 'failure'];
 	const annotations: ChecksUpdateParamsOutputAnnotations[] = [];
+	const consoleOutput: string[] = [];
+	const consoleLevels = [, 'warning', 'error'];
 	for (const res of results) {
 		const { filePath, messages } = res;
 		const path = filePath.substring(GITHUB_WORKSPACE!.length + 1);
 		for (const msg of messages) {
 			const { line, endLine, column, endColumn, severity, ruleId, message } = msg;
 			const annotationLevel = levels[severity];
+			const consoleLevel = consoleLevels[severity];
 			annotations.push({
 				path,
 				start_line: line,
@@ -32,10 +35,13 @@ async function lint(files: string[] | null) {
 				end_column: endColumn || column,
 				annotation_level: annotationLevel,
 				title: ruleId || ACTION_NAME,
-				message
+				message: `${message}${ruleId ? `\nhttps://eslint.org/docs/rules/${ruleId}` : ''}`
 			});
+			consoleOutput.push(`${path}\n`);
+			consoleOutput.push(`##[${consoleLevel}]  ${line}:${column}  ${consoleLevel}  ${message}  ${ruleId}\n\n`);
 		}
 	}
+	console.log(consoleOutput.join(''));
 
 	return {
 		conclusion: errorCount > 0 ? 'failure' : 'success' as ChecksCreateParams['conclusion'],
@@ -79,7 +85,7 @@ async function run() {
 		});
 		currentSha = info.repository.pullRequest.commits.nodes[0].commit.oid;
 		const files = info.repository.pullRequest.files.nodes;
-		lintFiles = files.filter((file: { path: string }) => EXTENSIONS.has(extname(file.path))).map((f: { path: string }) => f.path);
+		lintFiles = files.filter((file: { path: string }) => EXTENSIONS.has(extname(file.path)) && !file.path.includes('.d.ts')).map((f: { path: string }) => f.path);
 	} else {
 		info = await octokit.repos.getCommit({ owner: context.repo.owner, repo: context.repo.repo, ref: GITHUB_SHA! });
 		currentSha = GITHUB_SHA!;
