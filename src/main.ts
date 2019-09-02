@@ -60,80 +60,114 @@ async function run() {
 	let info;
 	let lintFiles;
 	if (context.issue && context.issue.number) {
-		info = await octokit.graphql(`query($owner: String!, $name: String!, $prNumber: Int!) {
-			repository(owner: $owner, name: $name) {
-				pullRequest(number: $prNumber) {
-					files(first: 100) {
-						nodes {
-							path
+		try {
+			info = await octokit.graphql(`query($owner: String!, $name: String!, $prNumber: Int!) {
+				repository(owner: $owner, name: $name) {
+					pullRequest(number: $prNumber) {
+						files(first: 100) {
+							nodes {
+								path
+							}
 						}
-					}
-					commits(last: 1) {
-						nodes {
-							commit {
-								oid
+						commits(last: 1) {
+							nodes {
+								commit {
+									oid
+								}
 							}
 						}
 					}
 				}
-			}
-		}`,
-		{
-			owner: context.repo.owner,
-			name: context.repo.repo,
-			prNumber: context.issue.number
-		});
-		currentSha = info.repository.pullRequest.commits.nodes[0].commit.oid;
-		const files = info.repository.pullRequest.files.nodes;
-		lintFiles = files.filter((file: { path: string }) => EXTENSIONS.has(extname(file.path)) && !file.path.includes('.d.ts')).map((f: { path: string }) => f.path);
+			}`,
+			{
+				owner: context.repo.owner,
+				name: context.repo.repo,
+				prNumber: context.issue.number
+			});
+		} catch {
+			console.log('##[warning] Token doesn\'t have permission to access this resource.');
+		}
+		if (info) {
+			currentSha = info.repository.pullRequest.commits.nodes[0].commit.oid;
+			const files = info.repository.pullRequest.files.nodes;
+			lintFiles = files.filter((file: { path: string }) => EXTENSIONS.has(extname(file.path)) && !file.path.includes('.d.ts')).map((f: { path: string }) => f.path);
+		} else {
+			currentSha = GITHUB_SHA!;
+		}
 	} else {
-		info = await octokit.repos.getCommit({ owner: context.repo.owner, repo: context.repo.repo, ref: GITHUB_SHA! });
+		try {
+			info = await octokit.repos.getCommit({ owner: context.repo.owner, repo: context.repo.repo, ref: GITHUB_SHA! });
+		} catch {
+			console.log('##[warning] Token doesn\'t have permission to access this resource.');
+		}
+		if (info) {
+			const files = info.data.files;
+			lintFiles = files.filter(file => EXTENSIONS.has(extname(file.filename)) && !file.filename.includes('.d.ts') && file.status !== 'removed' && file.status !== 'changed').map(f => f.filename);
+		}
 		currentSha = GITHUB_SHA!;
-		const files = info.data.files;
-		lintFiles = files.filter(file => EXTENSIONS.has(extname(file.filename)) && !file.filename.includes('.d.ts') && file.status !== 'removed' && file.status !== 'changed').map(f => f.filename);
 	}
 	debug(`Commit: ${currentSha}`);
 
 	let id: number | undefined;
 	const jobName = getInput('job-name');
 	if (jobName) {
-		const checks = await octokit.checks.listForRef({
-			...context.repo,
-			status: 'in_progress',
-			ref: currentSha
-		});
-		const check = checks.data.check_runs.find(({ name }) => name.toLowerCase() === jobName.toLowerCase());
-		if (check) id = check.id;
+		try {
+			const checks = await octokit.checks.listForRef({
+				...context.repo,
+				status: 'in_progress',
+				ref: currentSha
+			});
+			const check = checks.data.check_runs.find(({ name }) => name.toLowerCase() === jobName.toLowerCase());
+			if (check) id = check.id;
+		} catch {
+			console.log('##[warning] Token doesn\'t have permission to access this resource.');
+		}
 	}
 	if (!id) {
-		id = (await octokit.checks.create({
-			...context.repo,
-			name: ACTION_NAME,
-			head_sha: currentSha,
-			status: 'in_progress',
-			started_at: new Date().toISOString()
-		})).data.id;
+		try {
+			id = (await octokit.checks.create({
+				...context.repo,
+				name: ACTION_NAME,
+				head_sha: currentSha,
+				status: 'in_progress',
+				started_at: new Date().toISOString()
+			})).data.id;
+		} catch (error) {
+			console.log('##[warning] Token doesn\'t have permission to access this resource.');
+		}
 	}
 
 	try {
 		const lintAll = getInput('lint-all');
 		const { conclusion, output } = await lint(lintAll ? null : lintFiles);
-		await octokit.checks.update({
-			...context.repo,
-			check_run_id: id,
-			completed_at: new Date().toISOString(),
-			conclusion,
-			output
-		});
+		if (id) {
+			try {
+				await octokit.checks.update({
+					...context.repo,
+					check_run_id: id,
+					completed_at: new Date().toISOString(),
+					conclusion,
+					output
+				});
+			} catch {
+				console.log('##[warning] Token doesn\'t have permission to access this resource.');
+			}
+		}
 		debug(output.summary);
 		if (conclusion === 'failure') setFailed(output.summary);
 	} catch (error) {
-		await octokit.checks.update({
-			...context.repo,
-			check_run_id: id,
-			conclusion: 'failure',
-			completed_at: new Date().toISOString()
-		});
+		if (id) {
+			try {
+				await octokit.checks.update({
+					...context.repo,
+					check_run_id: id,
+					conclusion: 'failure',
+					completed_at: new Date().toISOString()
+				});
+			} catch {
+				console.log('##[warning] Token doesn\'t have permission to access this resource.');
+			}
+		}
 		setFailed(error.message);
 	}
 }
