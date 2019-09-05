@@ -1,5 +1,9 @@
-name: 'ESLint'
+name: 'ESLint (JS/TS) Action '
 description: 'Lints JavaScript/TypeScript code.'
+author: 'iCrawl'
+branding:
+  icon: check-circle
+  color: yellow
 inputs:
   job-name:
     description: 'Optional name of the annotation author.'
