@@ -62,14 +62,8 @@ async function lint(files: string[] | undefined, lintAll?: string, customGlob?: 
 		}
 	}
 	const consoleOutput: string[] = [];
-	for (const v of output.entries()) consoleOutput.push(`${v}\n\n`);
-	if (consoleOutput.length) {
-		console.log(consoleOutput.join(''));
-		const totalProblems = errorCount + warningCount;
-		if (totalProblems) {
-			error(`✖ ${totalProblems} ${totalProblems === 1 ? 'problem' : 'problems'} (${errorCount} ${errorCount === 1 ? 'error' : 'errors'}, ${warningCount} ${warningCount === 1 ? 'warning' : 'warnings'})\n`);
-		}
-	}
+	for (const [, v] of output) consoleOutput.push(`${v.join('')}\n`);
+	if (consoleOutput.length) console.log(consoleOutput.join(''));
 
 	return {
 		conclusion: errorCount > 0 ? 'failure' : 'success' as ChecksCreateParams['conclusion'],
