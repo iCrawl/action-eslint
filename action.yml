@@ -9,6 +9,8 @@ inputs:
     description: 'Optional name of the annotation author.'
   lint-all:
     description: 'Lint all files.'
+  custom-glob:
+    description: 'Custom glob to overwrite which files to lint. Delimited by a comma(,).'
 runs:
   using: 'node12'
   main: 'dist/index.js'
