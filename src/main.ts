@@ -8,13 +8,23 @@ const { GITHUB_TOKEN, GITHUB_SHA, GITHUB_WORKSPACE } = process.env;
 const ACTION_NAME = 'ESLint';
 const EXTENSIONS = new Set(['.ts', '.js', '.tsx', '.jsx']);
 
-async function lint(files: string[] | null) {
+async function lint(files: string[] | undefined, lintAll?: string, customGlob?: string) {
 	const { CLIEngine } = await import(join(process.cwd(), 'node_modules/eslint')) as typeof import('eslint');
 	const cli = new CLIEngine({
 		extensions: [...EXTENSIONS],
 		ignorePath: '.gitignore'
 	});
-	const report = cli.executeOnFiles(files || ['src']);
+	let filesToLint;
+	if (customGlob && lintAll) {
+		filesToLint = customGlob.split(',');
+	} else if (lintAll) {
+		filesToLint = ['src'];
+	} else if (files) {
+		filesToLint = files;
+	} else {
+		filesToLint = ['src'];
+	}
+	const report = cli.executeOnFiles(filesToLint);
 	const { results, errorCount, warningCount } = report;
 	const levels: ChecksUpdateParamsOutputAnnotations['annotation_level'][] = ['notice', 'warning', 'failure'];
 	const annotations: ChecksUpdateParamsOutputAnnotations[] = [];
@@ -139,7 +149,8 @@ async function run() {
 
 	try {
 		const lintAll = getInput('lint-all');
-		const { conclusion, output } = await lint(lintAll ? null : lintFiles);
+		const customGlob = getInput('custom-glob');
+		const { conclusion, output } = await lint(lintFiles, lintAll, customGlob);
 		if (id) {
 			try {
 				await octokit.checks.update({
