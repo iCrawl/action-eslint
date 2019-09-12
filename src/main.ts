@@ -50,13 +50,14 @@ async function lint(files: string[] | undefined, lintAll?: string, customGlob?: 
 				message: `${message}${ruleId ? `\nhttps://eslint.org/docs/rules/${ruleId}` : ''}`
 			});
 			const hasPath = output.get(path);
-			if (!hasPath) {
+			if (hasPath) {
+				hasPath.push(`##[${consoleLevel}]  ${line}:${column}  ${consoleLevel}  ${message}  ${ruleId}\n`);
+				output.set(path, hasPath);
+			} else {
 				output.set(path, [
 					`${path}\n`,
 					`##[${consoleLevel}]  ${line}:${column}  ${consoleLevel}  ${message}  ${ruleId}\n`
-				])
-			} else {
-				hasPath.push(`##[${consoleLevel}]  ${line}:${column}  ${consoleLevel}  ${message}  ${ruleId}\n`);
+				]);
 			}
 		}
 	}
@@ -159,7 +160,7 @@ async function run() {
 				status: 'in_progress',
 				started_at: new Date().toISOString()
 			})).data.id;
-		} catch (error) {
+		} catch {
 			warning('Token doesn\'t have permission to access this resource. Running without annotations.');
 		}
 	}
@@ -183,7 +184,7 @@ async function run() {
 		}
 		debug(output.summary);
 		if (conclusion === 'failure') setFailed(output.summary);
-	} catch (error) {
+	} catch (e) {
 		if (id) {
 			try {
 				await octokit.checks.update({
@@ -196,7 +197,7 @@ async function run() {
 				warning('Token doesn\'t have permission to access this resource. Running without annotations.');
 			}
 		}
-		setFailed(error.message);
+		setFailed(e.message);
 	}
 }
 
