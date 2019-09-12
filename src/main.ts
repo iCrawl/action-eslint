@@ -18,11 +18,11 @@ async function lint(files: string[] | undefined, lintAll?: string, customGlob?: 
 	if (customGlob && lintAll) {
 		filesToLint = customGlob.split(',');
 	} else if (lintAll) {
-		filesToLint = ['src']
+		filesToLint = ['src'];
 	} else if (files) {
 		filesToLint = files;
 	} else {
-		filesToLint = ['src']
+		filesToLint = ['src'];
 	}
 	const report = cli.executeOnFiles(filesToLint);
 	const { results, errorCount, warningCount } = report;
