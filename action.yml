@@ -7,10 +7,11 @@ branding:
 inputs:
   job-name:
     description: 'Optional name of the annotation author.'
-  lint-all:
+  lint-all:	
     description: 'Lint all files.'
   custom-glob:
-    description: 'Custom glob to overwrite which files to lint. Delimited by a comma(,). This option only works with lint-all enabled.'
+    description: 'Custom glob to overwrite which files to lint. Delimited by a comma(,).'
+    
 runs:
   using: 'node12'
   main: 'dist/index.js'
