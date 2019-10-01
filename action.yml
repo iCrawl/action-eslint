@@ -6,11 +6,16 @@ branding:
   color: yellow
 inputs:
   job-name:
-    description: 'Optional name of the annotation author.'
-  lint-all:
+    description: 'Name of the annotation author.'
+    required: false
+    default: 'eslint'
+  lint-all:	
     description: 'Lint all files.'
+    default: false
+    required: false
   custom-glob:
     description: 'Custom glob to overwrite which files to lint. Delimited by a comma(,).'
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
