@@ -79,23 +79,23 @@ async function run() {
 		try {
 			info = await octokit.graphql(
 				`query($owner: String!, $name: String!, $prNumber: Int!) {
-				repository(owner: $owner, name: $name) {
-					pullRequest(number: $prNumber) {
-						files(first: 100) {
-							nodes {
-								path
+					repository(owner: $owner, name: $name) {
+						pullRequest(number: $prNumber) {
+							files(first: 100) {
+								nodes {
+									path
+								}
 							}
-						}
-						commits(last: 1) {
-							nodes {
-								commit {
-									oid
+							commits(last: 1) {
+								nodes {
+									commit {
+										oid
+									}
 								}
 							}
 						}
 					}
-				}
-			}`,
+				}`,
 				{
 					owner: context.repo.owner,
 					name: context.repo.repo,
