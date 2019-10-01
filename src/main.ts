@@ -14,17 +14,11 @@ async function lint(files: string[] | undefined, lintAll?: string, customGlob?: 
 		extensions: [...EXTENSIONS],
 		ignorePath: '.gitignore'
 	});
-	let filesToLint;
-	if (customGlob && lintAll) {
-		filesToLint = customGlob.split(',');
-	} else if (lintAll) {
-		filesToLint = ['src'];
-	} else if (files) {
-		filesToLint = files;
+	let filesToLint = files || ['src']; // Default fallback
+	if (lintAll) {
+		filesToLint = ['src']
 	} else if (customGlob) {
 		filesToLint = customGlob.split(',');
-	} else {
-		filesToLint = ['src'];
 	}
 	const report = cli.executeOnFiles(filesToLint);
 	const { results, errorCount, warningCount } = report;
