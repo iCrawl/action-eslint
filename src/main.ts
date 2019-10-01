@@ -1,7 +1,7 @@
-import { join, extname } from 'path';
-import { ChecksUpdateParamsOutputAnnotations, ChecksCreateParams } from '@octokit/rest';
-import { GitHub, context } from '@actions/github';
-import { getInput, setFailed, debug, warning, error } from '@actions/core';
+import { debug, getInput, setFailed, warning } from '@actions/core';
+import { context, GitHub } from '@actions/github';
+import { ChecksCreateParams, ChecksUpdateParamsOutputAnnotations } from '@octokit/rest';
+import { extname, join } from 'path';
 
 const { GITHUB_TOKEN, GITHUB_SHA, GITHUB_WORKSPACE } = process.env;
 
@@ -9,14 +9,14 @@ const ACTION_NAME = 'ESLint';
 const EXTENSIONS = new Set(['.ts', '.js', '.tsx', '.jsx']);
 
 async function lint(files: string[] | undefined, lintAll?: string, customGlob?: string) {
-	const { CLIEngine } = await import(join(process.cwd(), 'node_modules/eslint')) as typeof import('eslint');
+	const { CLIEngine } = (await import(join(process.cwd(), 'node_modules/eslint'))) as typeof import('eslint');
 	const cli = new CLIEngine({
 		extensions: [...EXTENSIONS],
-		ignorePath: '.gitignore'
+		ignorePath: '.gitignore',
 	});
 	let filesToLint = files || ['src']; // Default fallback
 	if (lintAll) {
-		filesToLint = ['src']
+		filesToLint = ['src'];
 	} else if (customGlob) {
 		filesToLint = customGlob.split(',');
 	}
@@ -41,7 +41,7 @@ async function lint(files: string[] | undefined, lintAll?: string, customGlob?: 
 				end_column: endColumn || column,
 				annotation_level: annotationLevel,
 				title: ruleId || ACTION_NAME,
-				message: `${message}${ruleId ? `\nhttps://eslint.org/docs/rules/${ruleId}` : ''}`
+				message: `${message}${ruleId ? `\nhttps://eslint.org/docs/rules/${ruleId}` : ''}`,
 			});
 			const hasPath = output.get(path);
 			if (hasPath) {
@@ -50,7 +50,7 @@ async function lint(files: string[] | undefined, lintAll?: string, customGlob?: 
 			} else {
 				output.set(path, [
 					`${path}\n`,
-					`##[${consoleLevel}]  ${line}:${column}  ${consoleLevel}  ${message}  ${ruleId}\n`
+					`##[${consoleLevel}]  ${line}:${column}  ${consoleLevel}  ${message}  ${ruleId}\n`,
 				]);
 			}
 		}
@@ -60,12 +60,12 @@ async function lint(files: string[] | undefined, lintAll?: string, customGlob?: 
 	if (consoleOutput.length) console.log(consoleOutput.join(''));
 
 	return {
-		conclusion: errorCount > 0 ? 'failure' : 'success' as ChecksCreateParams['conclusion'],
+		conclusion: errorCount > 0 ? 'failure' : ('success' as ChecksCreateParams['conclusion']),
 		output: {
 			title: ACTION_NAME,
 			summary: `${errorCount} error(s), ${warningCount} warning(s) found`,
-			annotations
-		}
+			annotations,
+		},
 	};
 }
 
@@ -77,7 +77,8 @@ async function run() {
 	let lintFiles;
 	if (context.issue && context.issue.number) {
 		try {
-			info = await octokit.graphql(`query($owner: String!, $name: String!, $prNumber: Int!) {
+			info = await octokit.graphql(
+				`query($owner: String!, $name: String!, $prNumber: Int!) {
 				repository(owner: $owner, name: $name) {
 					pullRequest(number: $prNumber) {
 						files(first: 100) {
@@ -95,18 +96,21 @@ async function run() {
 					}
 				}
 			}`,
-			{
-				owner: context.repo.owner,
-				name: context.repo.repo,
-				prNumber: context.issue.number
-			});
+				{
+					owner: context.repo.owner,
+					name: context.repo.repo,
+					prNumber: context.issue.number,
+				},
+			);
 		} catch {
-			warning('Token doesn\'t have permission to access this resource. Running lint over custom glob or all files.');
+			warning("Token doesn't have permission to access this resource. Running lint over custom glob or all files.");
 		}
 		if (info) {
 			currentSha = info.repository.pullRequest.commits.nodes[0].commit.oid;
 			const files = info.repository.pullRequest.files.nodes;
-			lintFiles = files.filter((file: { path: string }) => EXTENSIONS.has(extname(file.path)) && !file.path.includes('.d.ts')).map((f: { path: string }) => f.path);
+			lintFiles = files
+				.filter((file: { path: string }) => EXTENSIONS.has(extname(file.path)) && !file.path.includes('.d.ts'))
+				.map((f: { path: string }) => f.path);
 		} else {
 			currentSha = GITHUB_SHA!;
 		}
@@ -114,11 +118,19 @@ async function run() {
 		try {
 			info = await octokit.repos.getCommit({ owner: context.repo.owner, repo: context.repo.repo, ref: GITHUB_SHA! });
 		} catch {
-			warning('Token doesn\'t have permission to access this resource. Running lint over custom glob or all files.');
+			warning("Token doesn't have permission to access this resource. Running lint over custom glob or all files.");
 		}
 		if (info) {
 			const files = info.data.files;
-			lintFiles = files.filter(file => EXTENSIONS.has(extname(file.filename)) && !file.filename.includes('.d.ts') && file.status !== 'removed' && file.status !== 'changed').map(f => f.filename);
+			lintFiles = files
+				.filter(
+					file =>
+						EXTENSIONS.has(extname(file.filename)) &&
+						!file.filename.includes('.d.ts') &&
+						file.status !== 'removed' &&
+						file.status !== 'changed',
+				)
+				.map(f => f.filename);
 		}
 		currentSha = GITHUB_SHA!;
 	}
@@ -131,12 +143,12 @@ async function run() {
 			const checks = await octokit.checks.listForRef({
 				...context.repo,
 				status: 'in_progress',
-				ref: currentSha
+				ref: currentSha,
 			});
 			const check = checks.data.check_runs.find(({ name }) => name.toLowerCase() === jobName.toLowerCase());
 			if (check) id = check.id;
 		} catch {
-			warning('Token doesn\'t have permission to access this resource. Running without annotations.');
+			warning("Token doesn't have permission to access this resource. Running without annotations.");
 		}
 	}
 	if (!id) {
@@ -146,10 +158,10 @@ async function run() {
 				name: ACTION_NAME,
 				head_sha: currentSha,
 				status: 'in_progress',
-				started_at: new Date().toISOString()
+				started_at: new Date().toISOString(),
 			})).data.id;
 		} catch {
-			warning('Token doesn\'t have permission to access this resource. Running without annotations.');
+			warning("Token doesn't have permission to access this resource. Running without annotations.");
 		}
 	}
 
@@ -164,10 +176,10 @@ async function run() {
 					check_run_id: id,
 					completed_at: new Date().toISOString(),
 					conclusion,
-					output
+					output,
 				});
 			} catch {
-				warning('Token doesn\'t have permission to access this resource. Running without annotations.');
+				warning("Token doesn't have permission to access this resource. Running without annotations.");
 			}
 		}
 		debug(output.summary);
@@ -179,10 +191,10 @@ async function run() {
 					...context.repo,
 					check_run_id: id,
 					conclusion: 'failure',
-					completed_at: new Date().toISOString()
+					completed_at: new Date().toISOString(),
 				});
 			} catch {
-				warning('Token doesn\'t have permission to access this resource. Running without annotations.');
+				warning("Token doesn't have permission to access this resource. Running without annotations.");
 			}
 		}
 		setFailed(e.message);
