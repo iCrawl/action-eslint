@@ -15,7 +15,7 @@ async function lint(files: string[] | undefined, lintAll?: string, customGlob?: 
 		ignorePath: '.gitignore'
 	});
 	let filesToLint = files || ['src']; // Default fallback
-	if(lintAll) {
+	if (lintAll) {
 		filesToLint = ['src']
 	} else if (customGlob) {
 		filesToLint = customGlob.split(',');
