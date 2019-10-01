@@ -153,9 +153,10 @@ async function run() {
 		}
 	}
 
-	try {	
+	try {
+		const lintAll = getInput('lint-all');
 		const customGlob = getInput('custom-glob');
-		const { conclusion, output } = await lint(lintFiles, customGlob);
+		const { conclusion, output } = await lint(lintFiles, lintAll, customGlob);
 		if (id) {
 			try {
 				await octokit.checks.update({
