@@ -5,10 +5,6 @@ branding:
   icon: check-circle
   color: yellow
 inputs:
-  job-name:
-    description: 'Name of the annotation author.'
-    required: false
-    default: 'eslint'
   lint-all:
     description: 'Lint all files.'
     default: false
