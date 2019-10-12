@@ -31,23 +31,14 @@ async function lint(files?: string[], lintAll?: string, customGlob?: string) {
 			const consoleLevel = consoleLevels[severity];
 			const hasPath = output.get(filePath);
 			if (hasPath) {
-				hasPath.push(
-					`  ${line}:${column}  ${consoleLevel}  ${message} ${
-						ruleId ? `https://eslint.org/docs/rules/${ruleId}` : ''
-					}  ${ruleId || ''}\n`,
-				);
+				hasPath.push(`  ${line}:${column}  ${consoleLevel}  ${message}  ${ruleId || ''}\n`);
 				output.set(filePath, hasPath);
 			} else {
-				output.set(filePath, [
-					`${filePath}\n`,
-					`  ${line}:${column}  ${consoleLevel}  ${message} ${
-						ruleId ? `https://eslint.org/docs/rules/${ruleId}` : ''
-					}  ${ruleId || ''}\n`,
-				]);
+				output.set(filePath, [`${filePath}\n`, `  ${line}:${column}  ${consoleLevel}  ${message}  ${ruleId || ''}\n`]);
 			}
 		}
 	}
-	let consoleOut = '';
+	let consoleOut = '\n';
 	for (const [k, v] of output) {
 		consoleOut += `${k}\n`;
 		consoleOut += `${table([v.slice(1)], { align: ['r', 'l'] })}\n`;
