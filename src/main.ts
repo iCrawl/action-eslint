@@ -17,7 +17,8 @@ async function lint(files: string[] | undefined, lintAll?: string, customGlob?: 
 	let filesToLint = files || ['src']; // Default fallback
 	if (lintAll) {
 		filesToLint = ['src'];
-	} else if (customGlob) {
+	}
+	if (customGlob) {
 		filesToLint = customGlob.split(',');
 	}
 	const report = cli.executeOnFiles(filesToLint);
