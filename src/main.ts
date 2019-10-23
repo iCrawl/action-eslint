@@ -8,15 +8,14 @@ const { GITHUB_TOKEN, GITHUB_SHA, GITHUB_WORKSPACE } = process.env;
 const ACTION_NAME = 'ESLint';
 const EXTENSIONS = new Set(['.ts', '.js', '.tsx', '.jsx']);
 
-async function lint(files: string[] | undefined, lintAll?: string, defaultDir?: string, customGlob?: string) {
+async function lint(files: string[] | undefined, customGlob?: string, lintAll = false, defaultDir = 'src') {
 	const { CLIEngine } = (await import(join(process.cwd(), 'node_modules/eslint'))) as typeof import('eslint');
 	const cli = new CLIEngine({
 		extensions: [...EXTENSIONS],
 	});
-	const defaultFiles = defaultDir ? defaultDir : 'src'; // Default fallback
-	let filesToLint = files || [defaultFiles];
+	let filesToLint = files || [defaultDir];
 	if (lintAll) {
-		filesToLint = [defaultFiles];
+		filesToLint = [defaultDir];
 	}
 	if (customGlob) {
 		filesToLint = customGlob.split(',');
@@ -174,7 +173,7 @@ async function run() {
 		const lintAll = getInput('lint-all');
 		const customGlob = getInput('custom-glob');
 		const defaultDir = getInput('default-dir');
-		const { conclusion, output } = await lint(lintFiles, lintAll, defaultDir, customGlob);
+		const { conclusion, output } = await lint(lintFiles, customGlob, Boolean(lintAll), defaultDir);
 		if (id) {
 			try {
 				await octokit.checks.update({
