@@ -12,7 +12,6 @@ async function lint(files: string[] | undefined, lintAll?: string, customGlob?: 
 	const { CLIEngine } = (await import(join(process.cwd(), 'node_modules/eslint'))) as typeof import('eslint');
 	const cli = new CLIEngine({
 		extensions: [...EXTENSIONS],
-		ignorePath: '.gitignore',
 	});
 	let filesToLint = files || ['src']; // Default fallback
 	if (lintAll) {
