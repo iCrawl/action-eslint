@@ -8,15 +8,16 @@ const { GITHUB_TOKEN, GITHUB_SHA, GITHUB_WORKSPACE } = process.env;
 const ACTION_NAME = 'ESLint';
 const EXTENSIONS = new Set(['.ts', '.js', '.tsx', '.jsx']);
 
-async function lint(files: string[] | undefined, lintAll?: string, customGlob?: string) {
+async function lint(files: string[] | undefined, lintAll?: string, defaultDir?: string, customGlob?: string) {
 	const { CLIEngine } = (await import(join(process.cwd(), 'node_modules/eslint'))) as typeof import('eslint');
 	const cli = new CLIEngine({
 		extensions: [...EXTENSIONS],
 		ignorePath: '.gitignore',
 	});
-	let filesToLint = files || ['src']; // Default fallback
+	const defaultFiles = defaultDir ? defaultDir : 'src'; // Default fallback
+	let filesToLint = files || [defaultFiles];
 	if (lintAll) {
-		filesToLint = ['src'];
+		filesToLint = [defaultFiles];
 	}
 	if (customGlob) {
 		filesToLint = customGlob.split(',');
@@ -117,7 +118,11 @@ async function run() {
 		}
 	} else {
 		try {
-			info = await octokit.repos.getCommit({ owner: context.repo.owner, repo: context.repo.repo, ref: GITHUB_SHA! });
+			info = await octokit.repos.getCommit({
+				owner: context.repo.owner,
+				repo: context.repo.repo,
+				ref: GITHUB_SHA!,
+			});
 		} catch {
 			warning("Token doesn't have permission to access this resource. Running lint over custom glob or all files.");
 		}
@@ -169,7 +174,8 @@ async function run() {
 	try {
 		const lintAll = getInput('lint-all');
 		const customGlob = getInput('custom-glob');
-		const { conclusion, output } = await lint(lintFiles, lintAll, customGlob);
+		const defaultDir = getInput('default-dir');
+		const { conclusion, output } = await lint(lintFiles, lintAll, defaultDir, customGlob);
 		if (id) {
 			try {
 				await octokit.checks.update({
