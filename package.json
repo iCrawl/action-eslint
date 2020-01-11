@@ -14,7 +14,7 @@
 	},
 	"dependencies": {
 		"@actions/core": "^1.2.1",
-		"@actions/exec": "^1.0.2"
+		"@actions/exec": "^1.0.3"
 	},
 	"devDependencies": {
 		"@types/eslint": "^6.1.3",
