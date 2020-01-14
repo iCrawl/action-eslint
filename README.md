@@ -23,10 +23,8 @@ jobs:
       run: yarn install
     - name: eslint
       uses: icrawl/action-eslint@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        job-name: eslint
+        custom-glob: apps # only if a different glob is needed, default: src
 ```
 
 ## Contributing
